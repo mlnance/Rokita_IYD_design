@@ -1,0 +1,4 @@
+Each "roundX" directory should contain mutants and the appropriate files needed to have made them
+
+Round1: first attempt at a protocol
+Round2: not preserving Cbeta when making the mutation
