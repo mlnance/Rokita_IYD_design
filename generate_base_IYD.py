@@ -28,7 +28,8 @@ orig_pose = Pose()
 print "\ngenerate_nonstandard_residue_set"
 nonstandard_res_set = generate_nonstandard_residue_set( orig_pose, params )
 print "\npose_from_file"
-pose_from_file( orig_pose, nonstandard_res_set, "/Users/Research/pyrosetta4/Rokita_IYD_design/bact_IYD_chainA.pdb" )
+#pose_from_file( orig_pose, nonstandard_res_set, "/Users/Research/pyrosetta4/Rokita_IYD_design/bact_IYD_chainA.pdb" )
+pose_from_file( orig_pose, nonstandard_res_set, "/Users/Research/pyrosetta4/Rokita_IYD_design/test.pdb" )
 orig_pose.pdb_info().name( "IYD" )
 
 # generate a score function
