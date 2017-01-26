@@ -4,6 +4,7 @@ __author__="morganlnance"
 
 import argparse
 parser = argparse.ArgumentParser(description="Use PyRosetta to make a low-energy base structure of bact_IYD_chainA.pdb")
+parser.add_argument("pdb_file", type=str, help="the path to the PDB file of which you want to create a low-E version")
 parser.add_argument("rounds", type=int, help="the number of base poses you want to generate to find the lowest energy PDB")
 input_args = parser.parse_args()
 
@@ -15,6 +16,7 @@ from rosetta.protocols.simple_moves import RotamerTrialsMover, \
 from pyrosetta import *
 from util import *
 import pandas as pd
+import sys
 init()
 
 
@@ -28,8 +30,11 @@ orig_pose = Pose()
 print "\ngenerate_nonstandard_residue_set"
 nonstandard_res_set = generate_nonstandard_residue_set( orig_pose, params )
 print "\npose_from_file"
-#pose_from_file( orig_pose, nonstandard_res_set, "/Users/Research/pyrosetta4/Rokita_IYD_design/bact_IYD_chainA.pdb" )
-pose_from_file( orig_pose, nonstandard_res_set, "/Users/Research/pyrosetta4/Rokita_IYD_design/test.pdb" )
+try:
+    pose_from_file( orig_pose, nonstandard_res_set, input_args.pdb_file )
+except:
+    print "\nThere was some error loading your PDB. Is this a valid PDB file?: %s\n" %input_args.pdb_file
+    sys.exit()
 orig_pose.pdb_info().name( "IYD" )
 
 # generate a score function
@@ -65,7 +70,7 @@ mm.set_jump( True )
 for ii in range( 1, input_args.rounds + 1 ):
     # get a fresh copy of the original pose
     pose = orig_pose.clone()
-    pose.pdb_info().name( "IYD_" + str( ii ) )
+    pose.pdb_info().name( "%s_IYD" %str( ii ) )
 
     # create a RotamerTrialsMover
     rtm = RotamerTrialsMover( sf, task )
