@@ -1,4 +1,5 @@
 Each "roundX" directory should contain mutants and the appropriate files needed to have made them
 
-Round1: first attempt at a protocol
-Round2: not preserving Cbeta when making the mutation
+Round1: first attempt at a protocol. Make a mutation three separate times where each mutant is packed and minimized (bb, chi, and jumps). Lowest E mutant is kept
+Round2: not preserving Cbeta when making the mutation (as in round1)
+Round3: not preserving Cbeta when making the mutation, first mutation site is pack/min alone then the whole protein is pack/min
