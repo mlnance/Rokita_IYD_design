@@ -35,7 +35,7 @@ try:
 except:
     print "\nThere was some error loading your PDB. Is this a valid PDB file?: %s\n" %input_args.pdb_file
     sys.exit()
-orig_pose.pdb_info().name( "IYD" )
+orig_pose.pdb_info().name( "orig_IYD" )
 
 # generate a score function
 print "\nget_fa_scorefxn"
@@ -70,7 +70,7 @@ mm.set_jump( True )
 for ii in range( 1, input_args.rounds + 1 ):
     # get a fresh copy of the original pose
     pose = orig_pose.clone()
-    pose.pdb_info().name( "%s_IYD" %str( ii ) )
+    pose.pdb_info().name( "IYD_%s" %str( ii ) )
 
     # create a RotamerTrialsMover
     rtm = RotamerTrialsMover( sf, task )

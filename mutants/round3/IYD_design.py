@@ -1,16 +1,24 @@
 #!/usr/bin/python
 __author__="morganlnance"
 
+
+import argparse
+parser = argparse.ArgumentParser(description="Use PyRosetta to make low-energy mutants of pre-determined IYD design residues")
+parser.add_argument("pdb_file", type=str, help="the path to the relevant PDB file")
+
+
 from rosetta import *
 from rosetta.protocols.simple_moves import RotamerTrialsMover, \
     MinMover
 from pyrosetta import *
 from util import *
 import pandas as pd
+import sys
 init()
 
 
 # relevant mutation locations
+# from Rokita email 9/29/16
 mutation_locations = [ 91, 95, 99, 103, 107, 112, 113, 116, 172]
 # tester (PDB number 99, pose number 94)
 #mutation_locations = [ 99 ]
@@ -22,9 +30,12 @@ pose = Pose()
 print "\ngenerate_nonstandard_residue_set"
 nonstandard_res_set = generate_nonstandard_residue_set( pose, params )
 print "\npose_from_file"
-pose_from_file( pose, nonstandard_res_set, "/Users/Research/pyrosetta4/Rokita_IYD_design/base_bact_IYD_chainA.pdb" )
+try:
+    pose_from_file( pose, nonstandard_res_set, input_args.pdb_file )
+except:
+    print "\nThere was some error loading your PDB. Is this a valid PDB file?: %s\n" %input_args.pdb_file
+    sys.exit()
 pose.pdb_info().name( "IYD" )
-
 # create a PyMOLMover
 pmm = PyMOLMover()
 
