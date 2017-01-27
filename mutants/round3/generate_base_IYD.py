@@ -3,7 +3,7 @@ __author__="morganlnance"
 
 
 import argparse
-parser = argparse.ArgumentParser(description="Use PyRosetta to make a low-energy base structure of bact_IYD_chainA.pdb")
+parser = argparse.ArgumentParser(description="Use PyRosetta to make a low-energy base structure of IYD")
 parser.add_argument("pdb_file", type=str, help="the path to the PDB file of which you want to create a low-E version")
 parser.add_argument("rounds", type=int, help="the number of base poses you want to generate to find the lowest energy PDB")
 input_args = parser.parse_args()
@@ -36,6 +36,8 @@ except:
     print "\nThere was some error loading your PDB. Is this a valid PDB file?: %s\n" %input_args.pdb_file
     sys.exit()
 orig_pose.pdb_info().name( "orig_IYD" )
+# create a PyMOLMover
+pmm = PyMOLMover()
 
 # generate a score function
 print "\nget_fa_scorefxn"

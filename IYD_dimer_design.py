@@ -5,6 +5,7 @@ __author__="morganlnance"
 import argparse
 parser = argparse.ArgumentParser(description="Use PyRosetta to make low-energy mutants of pre-determined IYD design residues")
 parser.add_argument("pdb_file", type=str, help="the path to the relevant PDB file")
+input_args = parser.parse_args()
 
 
 from rosetta import *
@@ -19,11 +20,12 @@ init()
 
 # relevant mutation locations
 # from Rokita email 9/29/16
-mutation_locations = [ 91, 95, 99, 103, 107, 112, 113, 116, 172]
+#mutation_locations = [ 91, 95, 99, 103, 107, 112, 113, 116, 172]
 # from attempt at making a human IYD dimer with 2IP in it (see notes)
 mutation_locations = [ 65, 146, 145, 65, 64, 63, 62, 61, 60, 59, 149, 150, 153, 194, + 173, 172, 171, 170, 36, 35, 34, 210, 207, 38, 110, 107, 112, 95, 103 ]
 # tester (PDB number 99, pose number 94)
-mutation_locations = [ 99 ]
+#mutation_locations = [ 99 ]
+#AA_name1_list = [ 'A', 'E' ]
 
 
 # load in params to enable processing of IYD with cofactor and substrate
@@ -50,7 +52,6 @@ orig_E = sf( pose )
 
 # set up the lists that will hold relevant data
 pdb_mutant_locations = []
-pose_mutant_locations = []
 current_AAs = []
 mutant_AAs = []
 delta_energies = []
@@ -66,19 +67,27 @@ df = pd.DataFrame()
 # for each relevant mutation location (given in PDB number)
 for pdb_mutant_residue in mutation_locations:
     # get the original residue and the Pose number
-    pose_mutant_residue = pose.pdb_info().pdb2pose( 'A', pdb_mutant_residue )
-    orig_AA = pose.residue( pose_mutant_residue ).name1()
+    pose_mutant_residue_A = pose.pdb_info().pdb2pose( 'A', pdb_mutant_residue )
+    pose_mutant_residue_B = pose.pdb_info().pdb2pose( 'B', pdb_mutant_residue )
+    orig_AA = pose.residue( pose_mutant_residue_A ).name1()
     # sample each single point mutant
     for mut_AA in AA_name1_list:
         # but pick the lowest E of three clone mutants
         best_mut_pose = None
         for ii in range( 3 ):
             print "\nmutate_residue"
-            # we're giving a PDB number and we're working on chain A
+            # we're giving a PDB number and we're mutating chain A and B
             mut_pose = Pose()
-            mut_pose.assign( mutate_residue( pose_mutant_residue, 
+            # chain A
+            mut_pose.assign( mutate_residue( pose_mutant_residue_A, 
                                              mut_AA, 
                                              pose, 
+                                             sf, 
+                                             pdb_num=False ) )
+            # chain B
+            mut_pose.assign( mutate_residue( pose_mutant_residue_B, 
+                                             mut_AA, 
+                                             mut_pose, 
                                              sf, 
                                              pdb_num=False ) )
             # rename this mutant using the mutation information
@@ -89,7 +98,7 @@ for pdb_mutant_residue in mutation_locations:
             task = standard_packer_task( mut_pose )
             task.or_include_current( True )
             task.restrict_to_repacking()
-            [ task.nonconst_residue_task( res_num ).prevent_repacking() for res_num in range( 1, mut_pose.size() + 1 ) if res_num != pose_mutant_residue ]
+            [ task.nonconst_residue_task( res_num ).prevent_repacking() for res_num in range( 1, mut_pose.size() + 1 ) if ( res_num != pose_mutant_residue_A and res_num != pose_mutant_residue_B ) ]
             print "\nRotamerTrialsMover"
             rtm = RotamerTrialsMover( sf, task )
             rtm.apply( mut_pose )
@@ -97,8 +106,10 @@ for pdb_mutant_residue in mutation_locations:
             # create a MoveMap to use in a MinMover for only the mutation site
             print "\nMoveMap"
             mm = MoveMap()
-            mm.set_bb_true_range( pose_mutant_residue, pose_mutant_residue )
-            mm.set_chi_true_range( pose_mutant_residue, pose_mutant_residue )
+            mm.set_bb_true_range( pose_mutant_residue_A, pose_mutant_residue_A )
+            mm.set_bb_true_range( pose_mutant_residue_B, pose_mutant_residue_B )
+            mm.set_chi_true_range( pose_mutant_residue_A, pose_mutant_residue_A )
+            mm.set_chi_true_range( pose_mutant_residue_B, pose_mutant_residue_B )
             print "\nMinMover"
             minmover = MinMover( movemap_in=mm,
                                  scorefxn_in=sf,
@@ -141,7 +152,6 @@ for pdb_mutant_residue in mutation_locations:
 
         # store the best mutation information in the Pandas DataFrame
         pdb_mutant_locations.append( pdb_mutant_residue )
-        pose_mutant_locations.append( pose_mutant_residue )
         current_AAs.append( orig_AA )
         mutant_AAs.append( mut_AA )
         delta_energies.append( sf( best_mut_pose ) - orig_E )
@@ -149,7 +159,6 @@ for pdb_mutant_residue in mutation_locations:
 
 
 # append all mutation information into the Pandas Dataframe
-df["pose_num"] = pose_mutant_locations
 df["pdb_num"] = pdb_mutant_locations
 df["orig_res"] = current_AAs
 df["mutation"] = mutant_AAs

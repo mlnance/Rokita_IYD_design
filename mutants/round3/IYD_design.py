@@ -5,6 +5,7 @@ __author__="morganlnance"
 import argparse
 parser = argparse.ArgumentParser(description="Use PyRosetta to make low-energy mutants of pre-determined IYD design residues")
 parser.add_argument("pdb_file", type=str, help="the path to the relevant PDB file")
+input_args = parser.parse_args()
 
 
 from rosetta import *
