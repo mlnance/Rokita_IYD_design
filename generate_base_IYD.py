@@ -36,6 +36,8 @@ except:
     print "\nThere was some error loading your PDB. Is this a valid PDB file?: %s\n" %input_args.pdb_file
     sys.exit()
 orig_pose.pdb_info().name( "orig_IYD" )
+# create a PyMOLMover
+pmm = PyMOLMover()
 
 # generate a score function
 print "\nget_fa_scorefxn"
