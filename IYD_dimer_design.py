@@ -22,7 +22,17 @@ init()
 # from Rokita email 9/29/16
 #mutation_locations = [ 91, 95, 99, 103, 107, 112, 113, 116, 172]
 # from attempt at making a human IYD dimer with 2IP in it (see notes)
-mutation_locations = [ 65, 146, 145, 65, 64, 63, 62, 61, 60, 59, 149, 150, 153, 194, + 173, 172, 171, 170, 36, 35, 34, 210, 207, 38, 110, 107, 112, 95, 103 ]
+mutation_locations = [ 65, 146, 145 ]
+#mutation_locations = [ 65, 64, 63 ]
+#mutation_locations = [ 62, 61, 60 ]
+#mutation_locations = [ 59, 149, 150 ]
+#mutation_locations = [ 153, 194, 173 ]
+#mutation_locations = [ 172, 171, 170 ]
+#mutation_locations = [ 36, 35, 34 ]
+#mutation_locations = [ 210, 207, 38 ]
+#mutation_locations = [ 110, 107, 112 ]
+#mutation_locations = [ 95, 103 ]
+#mutation_locations = [ 65, 146, 145, 65, 64, 63, 62, 61, 60, 59, 149, 150, 153, 194, 173, 172, 171, 170, 36, 35, 34, 210, 207, 38, 110, 107, 112, 95, 103 ]
 # tester (PDB number 99, pose number 94)
 #mutation_locations = [ 99 ]
 #AA_name1_list = [ 'A', 'E' ]
