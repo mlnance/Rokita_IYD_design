@@ -5,6 +5,7 @@ __author__="morganlnance"
 import argparse
 parser = argparse.ArgumentParser(description="Use PyRosetta to make low-energy mutants of pre-determined IYD design residues")
 parser.add_argument("pdb_file", type=str, help="the path to the relevant PDB file")
+parser.add_argument("params_dir", type=str, help="the path to the directory holding the relevant parameter files")
 input_args = parser.parse_args()
 
 
@@ -13,15 +14,25 @@ from rosetta.protocols.simple_moves import RotamerTrialsMover, \
     MinMover
 from pyrosetta import *
 from util import *
+import sys, os
 init()
 
 
 # load in params to enable processing of IYD with cofactor and substrate
-params = [ "/Users/Research/pyrosetta4/Rokita_IYD_design/params/2_iodophenol.params", "/Users/Research/pyrosetta4/Rokita_IYD_design/params/flavin_mononucleotide.params" ]
-pose = Pose()
+# organize the parameter directory and pull param files from there
+if not input_args.params_dir.endswith( '/' ):
+    params_dir = input_args.params_dir + '/'
+else:
+    params_dir = input_args.params_dir
+params = [ os.path.join( params_dir, param ) for param in os.listdir( params_dir ) ]
 print "\ngenerate_nonstandard_residue_set"
-nonstandard_res_set = generate_nonstandard_residue_set( pose, params )
+try:
+    nonstandard_res_set = generate_nonstandard_residue_set( pose, params )
+except:
+    print "\nThere is something wrong with your parameter files. Did you give me the proper params directory?\n"
+    sys.exit()
 print "\npose_from_file"
+pose = Pose()
 try:
     pose_from_file( pose, nonstandard_res_set, input_args.pdb_file )
 except:
