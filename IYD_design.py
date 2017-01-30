@@ -34,13 +34,13 @@ else:
     params_dir = input_args.params_dir
 params = [ os.path.join( params_dir, param ) for param in os.listdir( params_dir ) ]
 print "\ngenerate_nonstandard_residue_set"
+pose = Pose()
 try:
     nonstandard_res_set = generate_nonstandard_residue_set( pose, params )
 except:
     print "\nThere is something wrong with your parameter files. Did you give me the proper params directory?\n"
     sys.exit()
 print "\npose_from_file"
-pose = Pose()
 try:
     pose_from_file( pose, nonstandard_res_set, input_args.pdb_file )
 except:
