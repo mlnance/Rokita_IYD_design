@@ -6,6 +6,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Use PyRosetta to make low-energy mutants of pre-determined IYD design residues")
 parser.add_argument("pdb_file", type=str, help="the path to the relevant PDB file")
 parser.add_argument("params_dir", type=str, help="the path to the directory holding the relevant parameter files")
+parser.add_argument("mutation_file", type=str, help="the path to the file containing the mutations to be made (PDB_num chain)")
 input_args = parser.parse_args()
 
 
@@ -20,10 +21,22 @@ init()
 
 
 # relevant mutation locations
+with open( input_args.mutation_file, "rb" ) as fh:
+    mutations = fh.readlines()
+    # mutations = [ [ 101, A ], [ 105, B ] ]
+    mutation_locations = [ mut.strip().split( ' ' ) for mut in mutations ]
 # from Rokita email 9/29/16
-mutation_locations = [ 91, 95, 99, 103, 107, 112, 113, 116, 172]
-# tester (PDB number 99, pose number 94)
-#mutation_locations = [ 99 ]
+#mutation_locations = [ 91, 95, 99, 103, 107, 112, 113, 116, 172]
+# from Zuodong's PDB and finding residues within 5 Ang of 2IP
+# this includes both chain A and B. Not doing symmetric mutations
+#mutation_locations_A = [ 128, 129, 130, 131, 211, 212 ]
+#mutation_locations_B = [ 104, 157, 161, 165, 169, 173, 176, 178, 184, 239 ]
+#mutation_locations = []
+#mutation_locations.extend( mutation_locations_A )
+#mutation_locations.extend( mutation_locations_B )
+# tester
+#mutation_locations = [ 104 ]
+#AA_name1_list = [ 'A' ]
 
 
 # load in params to enable processing of IYD with cofactor and substrate
@@ -60,6 +73,7 @@ orig_E = sf( pose )
 # set up the lists that will hold relevant data
 pdb_mutant_locations = []
 pose_mutant_locations = []
+chains = []
 current_AAs = []
 mutant_AAs = []
 delta_energies = []
@@ -73,9 +87,13 @@ df = pd.DataFrame()
 #### MUTATIONS ####
 ###################
 # for each relevant mutation location (given in PDB number)
-for pdb_mutant_residue in mutation_locations:
+for mutation in mutation_locations:
+    # mutation_locations = [ [ 101, A ], [ 105, B ] ]
+    # parse mutation file accordingly
+    pdb_mutant_residue = int( mutation[0] )
+    chain = mutation[1]
     # get the original residue and the Pose number
-    pose_mutant_residue = pose.pdb_info().pdb2pose( 'A', pdb_mutant_residue )
+    pose_mutant_residue = pose.pdb_info().pdb2pose( chain, pdb_mutant_residue )
     orig_AA = pose.residue( pose_mutant_residue ).name1()
     # sample each single point mutant
     for mut_AA in AA_name1_list:
@@ -83,7 +101,7 @@ for pdb_mutant_residue in mutation_locations:
         best_mut_pose = None
         for ii in range( 3 ):
             print "\nmutate_residue"
-            # we're giving a PDB number and we're working on chain A
+            # we're giving a pose number
             mut_pose = Pose()
             mut_pose.assign( mutate_residue( pose_mutant_residue, 
                                              mut_AA, 
@@ -151,6 +169,7 @@ for pdb_mutant_residue in mutation_locations:
         # store the best mutation information in the Pandas DataFrame
         pdb_mutant_locations.append( pdb_mutant_residue )
         pose_mutant_locations.append( pose_mutant_residue )
+        chains.append( chain )
         current_AAs.append( orig_AA )
         mutant_AAs.append( mut_AA )
         delta_energies.append( sf( best_mut_pose ) - orig_E )
@@ -160,6 +179,7 @@ for pdb_mutant_residue in mutation_locations:
 # append all mutation information into the Pandas Dataframe
 df["pose_num"] = pose_mutant_locations
 df["pdb_num"] = pdb_mutant_locations
+df["chain"] = chains
 df["orig_res"] = current_AAs
 df["mutation"] = mutant_AAs
 df["dG"] = delta_energies
