@@ -200,7 +200,7 @@ for mutation_set in mutation_set_locations:
                 best_mut_pose = mut_pose.clone()
             print "round %s of %s" %( round, rounds )
             print "current mutant: %s" %sf( mut_pose )
-            print "best mutant: %s" %( best_mut_pose )
+            print "best mutant: %s" %sf( best_mut_pose )
 
         # store the best mutation information in the Pandas DataFrame
         mut_residues.append( [ '_'.join( mut_set ) for mut_set in mutation_set_locations ] )
