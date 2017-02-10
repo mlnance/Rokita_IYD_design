@@ -82,10 +82,10 @@ mm.set_jump( True )
 best_pose = None
 
 # for as many decoy poses as specified
-for ii in range( 1, input_args.rounds + 1 ):
+for round in range( 1, input_args.rounds + 1 ):
     # get a fresh copy of the original pose
     pose = orig_pose.clone()
-    pose.pdb_info().name( "IYD_%s" %str( ii ) )
+    pose.pdb_info().name( "IYD_%s" %str( round ) )
 
     # create a RotamerTrialsMover
     rtm = RotamerTrialsMover( sf, task )
@@ -124,7 +124,8 @@ for ii in range( 1, input_args.rounds + 1 ):
 
     # relay energy of pose
     base_E = sf( pose )
-    print "\n\norig energy:", orig_E
+    print "\n\nround %s of %s" %( round, input_args.rounds )
+    print "orig energy:", orig_E
     print "current energy:", base_E
     print "best seen energy:", best_pose_E
 
