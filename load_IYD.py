@@ -26,19 +26,19 @@ else:
     params_dir = input_args.params_dir
 params = [ os.path.join( params_dir, param ) for param in os.listdir( params_dir ) ]
 print "\ngenerate_nonstandard_residue_set"
-pose = Pose()
+in_pose = Pose()
 try:
-    nonstandard_res_set = generate_nonstandard_residue_set( pose, params )
+    nonstandard_res_set = generate_nonstandard_residue_set( in_pose, params )
 except:
     print "\nThere is something wrong with your parameter files. Did you give me the proper params directory?\n"
     sys.exit()
 print "\npose_from_file"
 try:
-    pose_from_file( pose, nonstandard_res_set, input_args.pdb_file )
+    pose_from_file( in_pose, nonstandard_res_set, input_args.pdb_file )
 except:
     print "\nThere was some error loading your PDB. Is this a valid PDB file?: %s\n" %input_args.pdb_file
     sys.exit()
-pose.pdb_info().name( "IYD" )
+in_pose.pdb_info().name( "IYD" )
 # create a PyMOLMover
 pmm = PyMOLMover()
 
