@@ -115,11 +115,16 @@ for round in range( 1, input_args.rounds + 1 ):
     rtm.apply( pose )
     print "\nMinMover"
     minmover.apply( pose )
+    # 4
+    print "\nRotamerTrialsMover"
+    rtm.apply( pose )
+    print "\nMinMover"
+    minmover.apply( pose )
 
     # is this the first pose?
     # does this pose has the lowest E seen?
     if best_pose is None or ( sf( pose ) < sf( best_pose ) ):
-        best_pose.assign( pose )
+        best_pose = pose.clone()
         best_pose_E = sf( best_pose )
 
     # relay energy of pose
