@@ -80,6 +80,7 @@ mm.set_jump( True )
 
 # set up for storing the best E pose
 best_pose = None
+times_changed = 0
 
 # for as many decoy poses as specified
 for round in range( 1, input_args.rounds + 1 ):
@@ -122,10 +123,11 @@ for round in range( 1, input_args.rounds + 1 ):
     minmover.apply( pose )
 
     # is this the first pose?
-    # does this pose has the lowest E seen?
+    # does this pose have the lowest E seen?
     if best_pose is None or ( sf( pose ) < sf( best_pose ) ):
         best_pose = pose.clone()
         best_pose_E = sf( best_pose )
+        times_changed += 1
 
     # relay energy of pose
     base_E = sf( pose )
@@ -133,6 +135,7 @@ for round in range( 1, input_args.rounds + 1 ):
     print "orig energy:", orig_E
     print "current energy:", base_E
     print "best seen energy:", best_pose_E
+    print "times best_pose changed:", times_changed
 
     # store pose and energies in DataFrame lists
     orig_E_vals.append( orig_E )
