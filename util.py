@@ -1,4 +1,4 @@
-#!/usr/bin/python
+2#!/usr/bin/python
 __author__ = 'morganlnance'
 
 
@@ -11,7 +11,7 @@ AA_name3_to_name1 = { "ALA":'A', "CYS":'C', "ASP":'D', "GLU":'E', "PHE":'F', "GL
 
 
 def mutate_residue( pose_num, new_res_name, input_pose, sf, pdb_num = False, pdb_chain = None ):
-    """
+    '''
     Mutate residue at position <pose_num> to <new_res_name>
     <new_res_name> can be a single-letter or three-letter residue code
     If you are giving a pdb number, set <pdb_num> to True AND give me a <pdb_chain> letter id
@@ -22,7 +22,7 @@ def mutate_residue( pose_num, new_res_name, input_pose, sf, pdb_num = False, pdb
     :param pdb_num: bool( did you give me a PDB number instead? Set to True if so. Give me a <pdb_chain> too then ) Default = False (Pose number)
     :param pdb_chain: str( PDB chain id such as 'A' or 'X'. Must have set <pdb_num> to True as well
     :return: mutated Pose
-    """
+    '''
     # imports
     from pyrosetta import Pose, pose_from_sequence
     from rosetta.core.conformation import ResidueFactory
@@ -94,12 +94,29 @@ def mutate_residue( pose_num, new_res_name, input_pose, sf, pdb_num = False, pdb
     return pose
 
 
+def get_sum_hbond_E( sf, pose ):
+    '''
+    Get the sum of hbond_sr_bb, hbond_lr_bb, hbond_bb_sc, hbond_sc
+    :param sf: ScoreFunction
+    :param pose: Pose
+    :return: float( sum of hbond energies )
+    '''
+    # imports
+    from rosetta.core.scoring import score_type_from_name
+    
+    # list of hbond energies to grab
+    hbond_E_names = [ "hbond_sr_bb", "hbond_lr_bb", "hbond_bb_sc", "hbond_sc" ]
+
+    return sum( [ sf.score_by_scoretype( pose, score_type_from_name( st ) ) for st in hbond_E_names ] )
+    #return sum( [ pose.energies().total_energies().get( score_type_from_name( n ) ) for n in hbond_E_names ] )
+
+
 def show_score_breakdown( sf, pose ):
-    """
+    '''
     Shows the breakdown of the <pose>'s total score by printing the score of each nonzero weighted ScoreType in <sf>
     :param sf: ScoreFunction
     :param pose: Pose
-    """
+    '''
     # print out each score
     print "\n".join( [ "%s: %s" %( score_type, round( sf.score_by_scoretype( pose, score_type ), 3 ) ) for score_type in sf.get_nonzero_weighted_scoretypes() ] )
     print
