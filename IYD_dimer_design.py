@@ -103,7 +103,7 @@ poses = []
 
 # set up how many rounds each mutation set should be made
 # in order to find the lowest E mutant pose
-rounds = 3
+rounds = 2
 
 # we may want to adjust collected ddG data based on the ddG
 # of the wild-type mutation (if it's made)
