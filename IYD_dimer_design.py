@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser(description="Use PyRosetta to make low-energy m
 parser.add_argument("pdb_file", type=str, help="the path to the relevant PDB file")
 parser.add_argument("params_dir", type=str, help="the path to the directory holding the relevant parameter files")
 parser.add_argument("mutation_file", type=str, help="the path to the file containing the mutations to be made (PDBnum1_PDBnum2_etc)")
+parser.add_argument("dump_dir", type=str, help="the path to the directory where you want your mutant poses to be dumped")
 input_args = parser.parse_args()
 
 
@@ -42,6 +43,18 @@ with open( input_args.mutation_file, "rb" ) as fh:
 # tester
 #mutation_locations = [ 104 ]
 #AA_name1_list = [ 'A' ]
+
+# ensure dump directory exists
+if not os.path.isdir( input_args.dump_dir ):
+    print "\nYou gave me a non-existent path as your dump_dir. For clarity, please give me a directory that already exists.\n"
+    sys.exit()
+# the dump_dir exists
+else:
+    # add a trailing '\' if needed to the dump_dir
+    if not input_args.dump_dir.endswith( '/' ):
+        dump_dir = input_args.dump_dir + '/'
+    else:
+        dump_dir = input_args.dump_dir
 
 
 # load in params to enable processing of IYD with cofactor and substrate
@@ -99,7 +112,8 @@ delta_rama = []
 delta_fa_dun = []
 delta_p_aa_pp = []
 delta_ref = []
-poses = []
+# saving each pose costs a lot of memory in-run
+#poses = []
 
 # set up how many rounds each mutation set should be made
 # in order to find the lowest E mutant pose
@@ -110,7 +124,7 @@ rounds = 2
 wt_mutant_ddG = None
 
 # create a Pandas DataFrame
-full_df = pd.DataFrame()
+df = pd.DataFrame()
 
 
 ###################
@@ -250,37 +264,43 @@ for mutation_set in mutation_set_locations:
         delta_fa_dun.append( sf.score_by_scoretype( best_mut_pose, fa_dun ) - wt_fa_dun )
         delta_p_aa_pp.append( sf.score_by_scoretype( best_mut_pose, p_aa_pp ) - wt_p_aa_pp )
         delta_ref.append( sf.score_by_scoretype( best_mut_pose, ref ) - wt_ref )
-        poses.append( best_mut_pose )
+        # saving each pose costs a lot of memory
+        #poses.append( best_mut_pose )
 
         # if we made a wild-type mutation, store the ddG of this mutant so that
         # we can appropriately adjust our data
         if mutations == orig_AAs:
             wt_mutant_ddG = sf( best_mut_pose ) - wt_E
 
+        # dump this best_mut_pose into the specified dump_dir
+        best_mut_pose.dump_pdb( dump_dir + best_mut_pose.pdb_info().name() + ".pdb" )
+
 
 # if we collected the energy of the wild-type mutation, adjust the delta_energies data
-if  wt_mutant_ddG is not None:
+if wt_mutant_ddG is not None:
     adj_delta_energies = [ ddG - wt_mutant_ddG for ddG in delta_energies ]
 
 # append all mutation information into the Pandas Dataframe
-full_df["mutations_made"] = mutations_made
-full_df["ddG"] = delta_energies
-full_df["adj_ddG"] = adj_delta_energies
-full_df["dhbonds"] = delta_hbonds
-full_df["delta_fa_atr"] = delta_fa_atr
-full_df["delta_fa_rep"] = delta_fa_rep
-full_df["delta_fa_elec"] = delta_fa_elec
-full_df["delta_fa_sol"] = delta_fa_sol
-full_df["delta_hbond_E"] = delta_hbond_E
-full_df["delta_rama"] = delta_rama
-full_df["delta_fa_dun"] = delta_fa_dun
-full_df["delta_p_aa_pp"] = delta_p_aa_pp
-full_df["delta_ref"] = delta_ref
-full_df["poses"] = poses
-full_df = full_df.sort_values( "ddG" )
+df["mutations_made"] = mutations_made
+df["ddG"] = delta_energies
+if wt_mutant_ddG is not None:
+    df["adj_ddG"] = adj_delta_energies
+df["dhbonds"] = delta_hbonds
+df["delta_fa_atr"] = delta_fa_atr
+df["delta_fa_rep"] = delta_fa_rep
+df["delta_fa_elec"] = delta_fa_elec
+df["delta_fa_sol"] = delta_fa_sol
+df["delta_hbond_E"] = delta_hbond_E
+df["delta_rama"] = delta_rama
+df["delta_fa_dun"] = delta_fa_dun
+df["delta_p_aa_pp"] = delta_p_aa_pp
+df["delta_ref"] = delta_ref
+# saving each pose costs a lot of memory
+#df["poses"] = poses
+df = df.sort_values( "ddG" )
 
-# make another full_df without the poses
-df = full_df.drop( "poses", axis=1 )
+# make another df without the poses
+#df = df.drop( "poses", axis=1 )
 
 print "\nDone!"
 print "See 'df' for relevant data from run\n"
