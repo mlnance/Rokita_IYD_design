@@ -297,7 +297,10 @@ df["delta_p_aa_pp"] = delta_p_aa_pp
 df["delta_ref"] = delta_ref
 # saving each pose costs a lot of memory
 #df["poses"] = poses
-df = df.sort_values( "ddG" )
+try:
+    df = df.sort_values( "ddG" )
+except:
+    df = df.sort( "ddG" )
 
 # make another df without the poses
 #df = df.drop( "poses", axis=1 )
