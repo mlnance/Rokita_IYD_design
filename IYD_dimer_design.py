@@ -19,7 +19,7 @@ from rosetta.core.scoring import fa_atr, fa_rep, fa_elec, \
 from pyrosetta import *
 from pyrosetta.toolbox import get_hbonds
 from util import mutate_residue, get_sum_hbond_E, \
-    show_score_breakdown
+    show_score_breakdown, get_res_nums_within_radius_of_residue_list
 from util import *
 import pandas as pd
 import sys, os
@@ -116,8 +116,11 @@ delta_ref = []
 #poses = []
 
 # set up how many rounds each mutation set should be made
-# in order to find the lowest E mutant pose
+# in order to find the lowest E mutant pos
 rounds = 3
+
+# cutoff distance for packing radius around mutation_set residues
+cutoff = 8 # Angstroms
 
 # we may want to adjust collected ddG data based on the ddG
 # of the wild-type mutation (if it's made)
@@ -137,6 +140,15 @@ for mutation_set in mutation_set_locations:
     # generate all mutation combinations using the Cartesian product
     # http://stackoverflow.com/questions/3099987/generating-permutations-with-repetitions-in-python
     mutation_set_mutations = [ list( p ) for p in product( AA_name1_list, repeat=len( mutation_set ) ) ]
+    # find the residues within a cutoff distance of this mutation_set
+    # be sure to use the pose numbering of the given mutation_set
+    pose_mutation_set = [ pose.pdb_info().pdb2pose( 'A', int( n ) ) for n in mutation_set ]
+    pose_mutation_set.extend( [ pose.pdb_info().pdb2pose( 'B', int( n ) ) for n in mutation_set ] )
+    packable_residues = get_res_nums_within_radius_of_residue_list( pose_mutation_set, 
+                                                                    pose, 
+                                                                    cutoff, 
+                                                                    include_res_nums = True )
+
     # for each mutation in each mutation set
     for mut_num in range( len( mutation_set_mutations ) ):
         # pull out the mutation set for this round
@@ -214,6 +226,8 @@ for mutation_set in mutation_set_locations:
             task = standard_packer_task( mut_pose )
             task.or_include_current( True )
             task.restrict_to_repacking()
+            # turn off packing for residues outside of packing cutoff
+            [ task.nonconst_residue_task( res_num ).prevent_repacking() for res_num in range( 1, pose.size() + 1 ) if res_num not in packable_residues ]
             #print "\nRotamerTrialsMover"
             rtm = RotamerTrialsMover( sf, task )
             rtm.apply( mut_pose )
@@ -221,8 +235,8 @@ for mutation_set in mutation_set_locations:
             # create a MoveMap to use in a MinMover
             #print "\nMoveMap"
             mm = MoveMap()
-            mm.set_bb( True )
-            mm.set_chi( True )
+            [ mm.set_bb( res_num, True ) for res_num in packable_residues ]
+            [ mm.set_chi( res_num, True ) for res_num in packable_residues ]
             mm.set_jump( True )
             #print "\nMinMover"
             minmover = MinMover( movemap_in=mm,
