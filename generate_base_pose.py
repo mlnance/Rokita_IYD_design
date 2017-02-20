@@ -18,6 +18,7 @@ def generate_base_pose( pdb_file, rounds, params_dir=None ):
     # imports
     from rosetta.protocols.simple_moves import \
         RotamerTrialsMover, MinMover
+    from rosetta.core.scoring import fa_atr, fa_rep
     from pyrosetta import PyMOLMover, get_fa_scorefxn, \
         standard_packer_task, MoveMap, Pose, \
         generate_nonstandard_residue_set, \
@@ -52,7 +53,7 @@ def generate_base_pose( pdb_file, rounds, params_dir=None ):
             sys.exit()
 
         # checks pass, load pose
-        orig_pose.pdb_info().name( "orig_IYD" )
+        orig_pose.pdb_info().name( "orig_pose" )
 
     # otherwise, a pose should have been given
     else:
@@ -69,6 +70,11 @@ def generate_base_pose( pdb_file, rounds, params_dir=None ):
     print "\nget_fa_scorefxn"
     sf = get_fa_scorefxn()
     orig_E = sf( orig_pose )
+
+    # get orig weights of fa_atr and fa_rep
+    # these weights will be adjusted during pack/min
+    orig_fa_atr = sf.get_weight( fa_atr )
+    orig_fa_rep = sf.get_weight( fa_rep )
 
     # create a Pandas DataFrame and data holders
     df = pd.DataFrame()
@@ -102,7 +108,7 @@ def generate_base_pose( pdb_file, rounds, params_dir=None ):
     for round in range( 1, rounds + 1 ):
         # get a fresh copy of the original pose
         pose = orig_pose.clone()
-        pose.pdb_info().name( "IYD_%s" %str( round ) )
+        pose.pdb_info().name( "pose_%s" %str( round ) )
 
         # create a RotamerTrialsMover
         rtm = RotamerTrialsMover( sf, task )
@@ -119,23 +125,42 @@ def generate_base_pose( pdb_file, rounds, params_dir=None ):
         # run multiple RotamerTrialsMover and MinMover rounds
         # 1
         print "\nRotamerTrialsMover"
+        # multiply up fa_atr and down fa_rep
+        sf.set_weight( fa_atr, orig_fa_atr * 2.0 )
+        sf.set_weight( fa_rep, orig_fa_rep * 0.5 )
+        rtm.score_function( sf )
         rtm.apply( pose )
         print "\nMinMover"
+        minmover.score_function( sf )
         minmover.apply( pose )
         # 2
+        # then ramp fa_atr back down and fa_rep back up
+        # over each pack/min trial
+        sf.set_weight( fa_atr, orig_fa_atr * 1.67 )
+        sf.set_weight( fa_rep, orig_fa_rep * 0.67 )
         print "\nRotamerTrialsMover"
+        rtm.score_function( sf )
         rtm.apply( pose )
         print "\nMinMover"
+        minmover.score_function( sf )
         minmover.apply( pose )
         # 3
+        sf.set_weight( fa_atr, orig_fa_atr * 1.33 )
+        sf.set_weight( fa_rep, orig_fa_rep * 0.83 )
         print "\nRotamerTrialsMover"
+        rtm.score_function( sf )
         rtm.apply( pose )
         print "\nMinMover"
+        minmover.score_function( sf )
         minmover.apply( pose )
         # 4
+        sf.set_weight( fa_atr, orig_fa_atr )
+        sf.set_weight( fa_rep, orig_fa_rep )
         print "\nRotamerTrialsMover"
+        rtm.score_function( sf )
         rtm.apply( pose )
         print "\nMinMover"
+        minmover.score_function( sf )
         minmover.apply( pose )
 
         # is this the first pose?
