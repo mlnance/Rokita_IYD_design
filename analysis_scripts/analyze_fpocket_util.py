@@ -22,11 +22,61 @@ def pull_out_STP_lines(pdb_lines):
     return stp_lines
 
 
+def write_pdb_file(pdb_lines, filename):
+    '''
+    Write <pdb_lines> into a file named <filename>
+    Include a path in <filename> if you don't want it in the current directory
+    :param pdb_lines: list(pdb_lines)
+    :param filename: str(/path/to/filename)
+    :return: bool(True if successful)
+    '''
+    # the input pdb_lines may or may not end with a newline character
+    # strip each line and add it, for safety
+    pdb_lines = [line.strip() + "\n" for line in pdb_lines]
+
+    # write the file
+    try:
+        with open(filename, 'w') as fh:
+            fh.writelines(pdb_lines)
+        return True
+    except:
+        return False
+
+
+def get_xyz_coords_to_lines_dict(pdb_lines):
+    '''
+    Using lines from the pdb, pull out the x, y, z coordinates into a dictionary
+    Coordinates for the atom of that line will be the key, and the corresponding line is the value
+    :param pdb_lines: list(lines from pdb file)
+    :return: dict[(x, y, z)] = pdb_line
+    '''
+    # set up the dictionary
+    coords_to_pdb_line = {}
+    # x, y, z coordinates are in the same location for each pdb file line
+    # if a list of lines is given
+    if type(pdb_lines) is list:
+        for line in pdb_lines:
+            line_xyz = (float(line[30:38].replace(' ', '')),
+                        float(line[38:46].replace(' ', '')),
+                        float(line[46:54].replace(' ', '')))
+            coords_to_pdb_line[line_xyz] = line
+    # if a single line is given
+    if type(pdb_lines) is str:
+        line = pdb_lines
+        line_xyz = (float(line[30:38].replace(' ', '')),
+                    float(line[38:46].replace(' ', '')),
+                    float(line[46:54].replace(' ', '')))
+        coords_to_pdb_line[line_xyz] = line
+
+    return coords_to_pdb_line
+
+
 def get_xyz_coords(pdb_lines):
     '''
-    Using lines from the pdb, pull out the x, y, z coordinates into a list
+    Using lines from the pdb, pull out the x, y, z coordinates into a dictionary
+    Coordinates for the atom of that line will be the key, and the corresponding line is the value
     :param pdb_lines: list(lines from pdb file)
-    :return: list( (x, y, z) )
+    :return: dict[(x, y, z)] = pdb_line
     '''
     # x, y, z coordinates are in the same location for each pdb file line
     # if a list of lines is given
@@ -40,11 +90,39 @@ def get_xyz_coords(pdb_lines):
     # if a single line is given
     if type(pdb_lines) is str:
         line = pdb_lines
-        xyz_coords = (float(line[30:38].replace(' ', '')),
-                      float(line[38:46].replace(' ', '')),
-                      float(line[46:54].replace(' ', '')))
+        line_xyz = (float(line[30:38].replace(' ', '')),
+                    float(line[38:46].replace(' ', '')),
+                    float(line[46:54].replace(' ', '')))
+        xyz_coords = line_xyz
 
     return xyz_coords
+
+
+def get_lines_from_xyz_coords(pdb_lines, xyz_coords):
+    '''
+    From a list of x, y, z coords in <xyz_coords>, find the corresponding line in <pdb_lines>
+    :param pdb_lines: list(pdb_lines)
+    :param xyz_coords: list([x, y, z])
+    :return: list(corresponding pdb_lines)
+    '''
+    return_lines = []
+    # for each pdb line
+    for line in pdb_lines:
+        # only look at ATOM and HETATM
+        if line.startswith("ATOM") or line.startswith("HETATM"):
+            # for each set of xyz coordinates
+            for xyz_set in xyz_coords:
+                # pull out x, y, z
+                x, y, z = xyz_set
+                # pull out the line's x, y, z coords
+                line_x, line_y, line_z = [float(line[30:38].replace(' ', '')),
+                                          float(line[38:46].replace(' ', '')),
+                                          float(line[46:54].replace(' ', ''))]
+                # compare
+                if x == line_x and y == line_y and z == line_z:
+                    return_lines.append(line)
+
+    return return_lines
 
 
 def define_plane_three_points(p1, p2, p3):
@@ -112,6 +190,9 @@ def pdb_residues_to_convex_hull(pdb_lines, residues):
     For a pdb described in <pdb_lines>, use <residues> to pull out CA atoms that will describe a set of planes
     Example: residues = [ [1, 2, 3], [3, 5, 6], [6, 8, 9] ]
     Where each set of three residues numbers defines one plane using their CA coordinate
+    NOTE: Function also can handle FMN and 2IP, which don't have the CA atoms
+    NOTE: If residue FMN (#401) and 2IP (#402) are passed, different atoms are used
+    NOTE: For FMN, atom C7M is used. For 2IP, atom C4 is used
     :param pdb_lines: list(lines in the pdb file)
     :param residues: list(sets of residue numbers that define each plane)
     :return:
@@ -119,23 +200,38 @@ def pdb_residues_to_convex_hull(pdb_lines, residues):
     # get a unique list of all residue numbers whose information is needed
     all_res_nums = []
     for l in residues:
-        for ii in l:
-            all_res_nums.append(ii)
+        for r in l:
+            all_res_nums.append(r)
     all_res_nums = list(set(all_res_nums))
 
     # construct a dictionary of residue number to CA coordinate
     CA_dict = {}
     for line in pdb_lines:
-        if line.startswith("ATOM"):
+        if line.startswith("ATOM") or line.startswith("HETATM"):
             # check if it's chain A
             chain = line[21:22]
             if chain == 'A':
-                # check if it's a CA atom of a residue
-                atom_name = line[12:16].replace(' ', '')
-                if atom_name == "CA":
-                    # check the residue number and if its a CA atom and chain A
-                    res_num = int(line[22:26].replace(' ', ''))
-                    if res_num in all_res_nums:
+                # check the residue number and if its a CA atom and chain A
+                # also, if it's residue 401 or 402, use their corresponding atoms
+                # residue 401 (FMN) atom C7M, residue 402 (2IP) atom C4
+                res_num = int(line[22:26].replace(' ', ''))
+                if res_num in all_res_nums:
+                    # pull out the atom name
+                    atom_name = line[12:16].replace(' ', '')
+                    # check if it's residue 401 (FMN)
+                    # and atom_name C7M
+                    if res_num == 401 and atom_name == "C7M":
+                        # add to dictionary
+                        CA_dict[res_num] = get_xyz_coords(line)
+                    # check if it's residue 402 (2IP)
+                    # and atom_name C4
+                    elif res_num == 402 and atom_name == "C4":
+                        # add to dictionary
+                        CA_dict[res_num] = get_xyz_coords(line)
+                    # now that residues 401 and 402 have been handled
+                    # check if it's any other protein residue in the list
+                    # and check if it's a CA atom of a residue
+                    elif res_num in all_res_nums and atom_name == "CA":
                         # add to dictionary
                         CA_dict[res_num] = get_xyz_coords(line)
 
