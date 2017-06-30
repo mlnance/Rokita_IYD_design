@@ -37,10 +37,10 @@ parser.add_argument("--dump_dir", type=str, help="/path/to/where you want to dum
                                                  Default is the current directory \
                                                  a .pdb file gets dumped for each input pdb \
                                                  and one .csv file for all data.")
-parser.add_argument("--dump_STP_pdbs", default=False, action="store_true",
-                                        help="Do you want to dump a .pdb file \
-                                        of all STP spheres within the convex hull \
-                                        for each pdb in pdb_list? Default = False")
+parser.add_argument("--dump_STP_pdb", default=False, action="store_true",
+                                    help="Do you want to dump a .pdb file \
+                                    of all STP spheres within the convex hull \
+                                    for each pdb in pdb_list? Default = False")
 input_args = parser.parse_args()
 
 # ensure input arguments are valid
@@ -87,7 +87,7 @@ for pdb_file in pdb_files:
     except:
         continue
     # add this pdb name to the pdb_names holder
-    pdb_name = pdb_file.split('/')[-1].split(".gz")[0].split(".pdb")[0]
+    pdb_name = pdb_file.split('/')[-1].split(".gz")[0].split(".pdb")[0].split("_out")[0]
     # store the directory that this pdb is in for use later
     pdb_dir = '/'.join(pdb_file.split('/')[:-1]) + '/'
 
@@ -220,7 +220,7 @@ for pdb_file in pdb_files:
         # since the convex hull chosen is not perfectly convex,
         # allow a max of two falses (meaning jj_direction != stp_direction)
         # if 2 or fewer falses in comparison, STP sphere is in the convex hull
-        if ii_to_jj_directions.count(False) <= 2:
+        if ii_to_jj_directions.count(False) <= 7:
             line = get_lines_from_xyz_coords(pdb_lines, [stp_point])[0]
             stp_spheres_inside_convex_hull.append(line)
 
@@ -236,7 +236,7 @@ for pdb_file in pdb_files:
     all_num_stp_spheres_in_convex_hull.append(num_stp_spheres_in_convex_hull)
 
     # write out a pdb files of the unique STP spheres, if desired
-    if input_args.dump_STP_pdbs:
+    if input_args.dump_STP_pdb:
         write_pdb_file(pdb_lines=stp_spheres_inside_convex_hull,
                        filename=pdb_dir + pdb_name + "_STP_spheres_in_convex_hull.pdb")
 
