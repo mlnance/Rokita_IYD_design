@@ -1,0 +1,11 @@
+I.E. KEEP A DIR OF COPIES OF THE INPUT PDBs
+
+score_vs_rmsd_full.py was taken from Rosetta/tools/protein_tools and edited to work locally
+doesn't seem to work with gzipped PDBs
+
+requires a preparation phase for bact_IYD because it doesn't like the ligands
+it complains about FMN and flavin_mononucleotide not being the same name
+same for 2IP and 2-iodophenol (not really sure where it has an issue)
+the preparation script handles this by replacing the long name with the short
+and OVERWRITING the input PDB
+hence, a COPY of ALL PDBs to be analyzed should be kept
