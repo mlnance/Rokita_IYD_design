@@ -41,6 +41,8 @@ parser.add_argument("--dump_STP_pdb", default=False, action="store_true",
                                     help="Do you want to dump a .pdb file \
                                     of all STP spheres within the convex hull \
                                     for each pdb in pdb_list? Default = False")
+parser.add_argument("--dump_convex_hull_pdb", default=False, action="store_true",
+                    help="Do you want to dump a .pdb file of the normal PDB with the STP spheres that are within the convex hull? Default = False")
 input_args = parser.parse_args()
 
 # ensure input arguments are valid
@@ -108,6 +110,11 @@ for pdb_file in pdb_files:
     # GET STP SPHERES #
     ###################
     stp_sphere_lines = pull_out_STP_lines(pdb_lines)
+    # also keep all lines that ARENT STP sphere lines
+    # not using a set because that puts the lines out of order
+    # keeping these lines separate in order to make a PDB of the structure
+    # with the STP spheres and lines between the convex hull residues
+    normal_pdb_lines = [line for line in pdb_lines if line not in stp_sphere_lines]
 
     ##################
     # GET STP COORDS #
@@ -235,10 +242,15 @@ for pdb_file in pdb_files:
     pdb_names.append(pdb_name)
     all_num_stp_spheres_in_convex_hull.append(num_stp_spheres_in_convex_hull)
 
-    # write out a pdb files of the unique STP spheres, if desired
+    # write out a pdb file of the unique STP spheres, if desired
     if input_args.dump_STP_pdb:
-        write_pdb_file(pdb_lines=stp_spheres_inside_convex_hull,
-                       filename=pdb_dir + pdb_name + "_STP_spheres_in_convex_hull.pdb")
+        write_pdb_file(pdb_lines = stp_spheres_inside_convex_hull,
+                       filename = pdb_dir + pdb_name + "_STP_spheres_in_convex_hull.pdb")
+    # write out a pdb file of the normal PDB with the STP spheres in the convex hull, if desired
+    if input_args.dump_convex_hull_pdb:
+        file_lines = normal_pdb_lines + stp_spheres_inside_convex_hull
+        write_pdb_file(pdb_lines = file_lines, 
+                       filename = pdb_dir + pdb_name + '_convex_hull.pdb')
 
 
 ##############

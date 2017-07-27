@@ -1,0 +1,9 @@
+to run the generate scripts, but all of the relevant pdb name extensions in a file
+(here called 0pdb_names) and do
+
+# note that the quotes are necessary
+while read line
+do
+    /path/to/scripts/./gen_CCD_flags.sh $line > 1$line"_flags"
+done < 0pdb_names
+where $line would be something like 'bact_IYD_02961'

@@ -1,0 +1,20 @@
+'mld' means 'multiple ligand docking' where both 2IP and FMN are docked
+
+to run the generate scripts, but all of the relevant pdb name extensions in a file
+(here called 0pdb_names) and do
+
+## single ligand docking
+while read line
+do
+    /path/to/scripts/./gen_lig_dock_flags.sh $line > 1$line"_flags"
+    /path/to/scripts/./gen_lig_dock_xml.sh $line > 1$line"_dock.xml"
+done < 0pdb_names
+where $line would be something like 'bact_IYD_02961'
+
+## multiple ligand docking
+while read line
+do
+    /path/to/scripts/./gen_lig_dock_mld_flags.sh $line > 1$line"_mld_flags"
+    /path/to/scripts/./gen_lig_dock_mld_xml.sh $line > 1$line"_mld_dock.xml"
+done < 0pdb_names
+where $line would be something like 'bact_IYD_02961'

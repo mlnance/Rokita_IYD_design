@@ -74,7 +74,7 @@ else:
 ############
 # get a list of pdb files from the pdb_dir
 # use the pdb_dir path to get the absolute path to all pdbs
-pdb_files = [pdb_dir + pdb for pdb in os.listdir(pdb_dir) if pdb.endswith(".pdb") or pdb.endswith(".gzl")]
+pdb_files = [pdb_dir + pdb for pdb in os.listdir(pdb_dir) if pdb.endswith(".pdb") or pdb.endswith(".gz")]
 
 
 #############

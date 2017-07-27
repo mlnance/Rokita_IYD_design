@@ -3,6 +3,9 @@ __author__ = "morganlnance"
 
 '''
 Use Python to read a score.sc file and return a .csv file of the information
+Allows for overwriting multiple entries of the same decoy in the score.sc file
+where only the most recent (last entry) decoy in the file is saved
+i.e. handles when a score.sc file has multiple scores for the same decoy
 '''
 
 
